@@ -25,6 +25,8 @@ public class TodoService {
     private final TodoRepository todoRepository;
     private final WeatherClient weatherClient;
 
+    //H2는 실제 write를 막지 않기 때문에 이를 설정하지 않아도 오류 없이 잘 실행된다.
+    @Transactional(readOnly = false)
     public TodoSaveResponse saveTodo(AuthUser authUser, TodoSaveRequest todoSaveRequest) {
         User user = User.fromAuthUser(authUser);
 
