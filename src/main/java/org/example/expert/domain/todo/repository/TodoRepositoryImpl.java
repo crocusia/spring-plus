@@ -1,21 +1,30 @@
 package org.example.expert.domain.todo.repository;
 
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import lombok.RequiredArgsConstructor;
+import org.example.expert.domain.todo.entity.QTodo;
 import org.example.expert.domain.todo.entity.Todo;
+import org.example.expert.domain.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+@RequiredArgsConstructor
+@Repository
 public class TodoRepositoryImpl implements TodoRepositoryCustom  {
 
+    private final JPAQueryFactory jpaQueryFactory;
     @PersistenceContext
     private EntityManager em;
 
@@ -75,5 +84,19 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom  {
         Long total = countQuery.getSingleResult();
 
         return new PageImpl<>(results, pageable, total);
+    }
+
+    @Override
+    public Optional<Todo> findByIdWithUser(Long todoId){
+        QTodo todo = QTodo.todo;
+        QUser user = QUser.user;
+
+        return Optional.ofNullable(
+                jpaQueryFactory
+                        .selectFrom(todo)
+                        .leftJoin(todo.user, user).fetchJoin()
+                        .where(todo.id.eq(todoId))
+                        .fetchOne()
+        );
     }
 }
