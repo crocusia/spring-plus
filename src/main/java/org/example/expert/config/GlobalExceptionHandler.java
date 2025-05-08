@@ -1,5 +1,6 @@
 package org.example.expert.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.common.exception.ServerException;
