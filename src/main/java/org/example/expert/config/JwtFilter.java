@@ -9,8 +9,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.expert.domain.auth.service.CustomUserDetailsService;
 import org.example.expert.domain.user.enums.UserRole;
-import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -20,16 +23,15 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
-    public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
+    public void doFilterInternal(HttpServletRequest httpRequest, HttpServletResponse httpResponse, FilterChain chain) throws IOException, ServletException {
 
         String url = httpRequest.getRequestURI();
 
         if (url.startsWith("/auth")) {
-            chain.doFilter(request, response);
+            chain.doFilter(httpRequest, httpResponse);
             return;
         }
 
@@ -52,11 +54,18 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             UserRole userRole = UserRole.valueOf(claims.get("userRole", String.class));
-
             httpRequest.setAttribute("userId", Long.parseLong(claims.getSubject()));
             httpRequest.setAttribute("email", claims.get("email"));
             httpRequest.setAttribute("userRole", claims.get("userRole"));
             httpRequest.setAttribute("nickname", claims.get("nickname"));
+
+            // Spring Security 인증 객체 생성 및 설정
+            UserDetails userDetails = userDetailsService.loadUserByUsername(claims.get("email", String.class));
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
 
             if (url.startsWith("/admin")) {
                 // 관리자 권한이 없는 경우 403을 반환합니다.
@@ -64,11 +73,11 @@ public class JwtFilter extends OncePerRequestFilter {
                     httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 없습니다.");
                     return;
                 }
-                chain.doFilter(request, response);
+                chain.doFilter(httpRequest, httpResponse);
                 return;
             }
 
-            chain.doFilter(request, response);
+            chain.doFilter(httpRequest, httpResponse);
         } catch (SecurityException | MalformedJwtException e) {
             log.error("Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.", e);
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않는 JWT 서명입니다.");

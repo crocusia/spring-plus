@@ -1,6 +1,7 @@
 package org.example.expert.config;
 
 import lombok.RequiredArgsConstructor;
+import org.example.expert.domain.auth.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class FilterConfig {
 
     private final JwtUtil jwtUtil;
-
+    private final CustomUserDetailsService userDetailsService;
 //    @Bean
 //    public FilterRegistrationBean<JwtFilter> jwtFilter() {
 //        FilterRegistrationBean<JwtFilter> registrationBean = new FilterRegistrationBean<>();
@@ -21,6 +22,6 @@ public class FilterConfig {
 
     @Bean
     public JwtFilter jwtFilter() {
-        return new JwtFilter(jwtUtil);
+        return new JwtFilter(jwtUtil, userDetailsService);
     }
 }
