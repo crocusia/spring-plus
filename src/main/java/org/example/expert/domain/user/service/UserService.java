@@ -7,9 +7,13 @@ import org.example.expert.domain.user.dto.request.UserChangePasswordRequest;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.example.expert.domain.user.repository.UserRepositoryImpl;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,10 +22,19 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserRepositoryImpl userCustomRepository;
 
     public UserResponse getUser(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
         return new UserResponse(user.getId(), user.getEmail());
+    }
+
+    public List<UserResponse> getUserByNickname(String nickname){
+        List<UserResponse> users = userCustomRepository.findByNickname(nickname);
+        if(users.isEmpty()){
+            throw new UsernameNotFoundException("닉네임과 일치하는 유저가 없습니다.");
+        }
+        return users;
     }
 
     @Transactional
